@@ -24,7 +24,7 @@ services:
     runtime: static
     rootDir: storefront-react
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
         sync: false
@@ -43,7 +43,7 @@ services:
     runtime: static
     rootDir: admin-react
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
         sync: false
