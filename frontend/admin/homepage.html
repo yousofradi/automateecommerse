@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة الرئيسية — Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    .hp-section {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: box-shadow 0.2s;
+    }
+    .hp-section:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .hp-drag { cursor: grab; color: #94a3b8; font-size: 1.2rem; padding: 4px; }
+    .hp-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px; background: #f0fdf4;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .hp-info { flex: 1; min-width: 0; }
+    .hp-info h4 { margin: 0; font-size: 0.95rem; font-weight: 600; color: #1e293b; }
+    .hp-info p { margin: 2px 0 0; font-size: 0.8rem; color: #64748b; }
+    .hp-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .hp-actions button {
+      border: 1px solid #e2e8f0; background: #fff; border-radius: 8px;
+      padding: 6px 14px; cursor: pointer; font-family: inherit;
+      font-size: 0.85rem; color: #475569; transition: all 0.15s;
+    }
+    .hp-actions button:hover { background: #f8fafc; }
+    .hp-actions .btn-del { color: #ef4444; border-color: #fecaca; }
+    .hp-actions .btn-del:hover { background: #fef2f2; }
+
+    .add-section-bar {
+      display: flex; align-items: center; gap: 16px;
+      margin: 24px 0; position: relative;
+    }
+    .add-section-bar::before {
+      content: ''; position: absolute; top: 50%; left: 0; right: 0;
+      height: 1px; background: #0f766e; z-index: 0;
+    }
+    .add-section-btn {
+      position: relative; z-index: 1;
+      background: #fff; border: 2px solid #0f766e; color: #0f766e;
+      border-radius: 20px; padding: 8px 20px; cursor: pointer;
+      font-weight: 600; font-family: inherit; font-size: 0.9rem;
+      margin: 0 auto; transition: all 0.2s;
+    }
+    .add-section-btn:hover { background: #0f766e; color: #fff; }
+
+    .type-picker {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px; margin-top: 16px;
+    }
+    .type-card {
+      border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+      background: #fff;
+    }
+    .type-card:hover { border-color: #0f766e; background: #f0fdf4; }
+    .type-card .icon { font-size: 1.5rem; margin-bottom: 6px; }
+    .type-card .label { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
+
+    /* Modal */
+    .hp-modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .hp-modal {
+      background: #fff; border-radius: 16px; max-width: 600px;
+      width: 100%; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2); padding: 0;
+    }
+    .hp-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px; border-bottom: 1px solid #f1f5f9;
+    }
+    .hp-modal-header h3 { margin: 0; font-size: 1.1rem; }
+    .hp-modal-close {
+      background: none; border: none; font-size: 1.5rem;
+      cursor: pointer; color: #94a3b8; padding: 4px;
+    }
+    .hp-modal-body { padding: 24px; }
+    .hp-modal-footer {
+      display: flex; gap: 12px; justify-content: flex-start;
+      padding: 16px 24px; border-top: 1px solid #f1f5f9;
+    }
+
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: #374151; }
+    .form-row input, .form-row select {
+      width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0;
+      border-radius: 8px; font-family: inherit; font-size: 0.9rem;
+    }
+    .form-row input:focus, .form-row select:focus {
+      outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.1);
+    }
+
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0;
+    }
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px; cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #cbd5e1; border-radius: 24px;
+      transition: 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; top: 3px; left: 3px;
+      transition: 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #0f766e; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    /* Collection picker inside modal */
+    .col-picker-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+      margin-bottom: 6px; cursor: pointer; transition: background 0.15s;
+    }
+    .col-picker-item:hover { background: #f8fafc; }
+    .col-picker-item.selected { border-color: #0f766e; background: #f0fdf4; }
+    .col-picker-item img {
+      width: 36px; height: 36px; border-radius: 6px; object-fit: cover;
+    }
+
+    @media (max-width: 600px) {
+      .hp-section { flex-wrap: wrap; }
+      .hp-actions { width: 100%; justify-content: flex-end; }
+      .type-picker { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    
+    <aside class="admin-sidebar">
+      <div class="admin-brand-header">
+        <div class="admin-brand-title store-name-text"></div>
+        <a href="#" target="_blank" class="admin-store-preview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          معاينة المتجر
+        </a>
+      </div>
+      <button class="sidebar-toggle" style="position:absolute; top:20px; left:20px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#475569;">☰</button>
+      
+      <nav class="admin-nav">
+        <a href="/">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          الرئيسية
+        </a>
+        <a href="orders.html">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          الطلبات
+        </a>
+        <a href="customers.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          العملاء
+        </a>
+        <a href="products.html">
+          <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          المنتجات
+        </a>
+        <a href="collections.html">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          المجموعات
+        </a>
+        <a href="homepage.html" class="active">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          تخصيص الواجهة
+        </a>
+        <a href="shipment.html">
+          <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          الشحن
+        </a>
+        <a href="settings.html">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          إعدادات المتجر
+        </a>
+        <a href="webhooks.html">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Webhooks
+        </a>
+        <a href="whatsapp.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-14h.9a4.3 4.3 0 0 1 3 1.3 4.3 4.3 0 0 1 1.3 3Z"></path></svg>
+          WhatsApp
+        </a>
+        <a href="#" onclick="logout()" class="logout">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          خروج
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div style="max-width:900px">
+        <div class="flex-between mb-24" style="flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1 class="page-title" style="margin-bottom:4px">ميّز الصفحة الرئيسية لمتجرك</h1>
+            <p class="page-subtitle" style="margin-bottom:0">ميّز صفحة متجرك الرئيسية بالأقسام المختلفة</p>
+          </div>
+        </div>
+
+        <div id="sections-list"></div>
+
+        <div class="add-section-bar">
+          <button class="add-section-btn" onclick="showTypePicker()">+ أضف قسم</button>
+        </div>
+
+        <div id="type-picker-area" class="hidden">
+          <div class="admin-card">
+            <div class="type-picker">
+              <div class="type-card" onclick="addSection('products')">
+                <div class="icon">◈</div>
+                <div class="label">قسم للمنتجات</div>
+              </div>
+              <div class="type-card" onclick="addSection('collections')">
+                <div class="icon">🗂</div>
+                <div class="label">قسم للمجموعات</div>
+              </div>
+              <div class="type-card" onclick="addSection('banner')">
+                <div class="icon">🖼</div>
+                <div class="label">قسم للافتات</div>
+              </div>
+              <div class="type-card" onclick="addSection('text')">
+                <div class="icon">T</div>
+                <div class="label">قسم للنص</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="section-modal"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/homepage.js"></script>
+</body>
+</html>
+

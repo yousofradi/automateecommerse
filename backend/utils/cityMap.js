@@ -1,0 +1,31 @@
+const cityMap = {
+  "القاهرة": "CAIRO",
+  "الجيزة": "GIZA",
+  "الإسكندرية": "ALEXANDRIA",
+  "البحيرة": "BEHIRA",
+  "القليوبية": "QALIUBIA",
+  "الغربية": "GHARBIA",
+  "المنوفية": "MONOUFIA",
+  "دمياط": "DOMITTA",
+  "الدقهلية": "DAKAHLIA",
+  "كفر الشيخ": "KAFR EL SHEIKH",
+  "مطروح": "MARSA MATROUH",
+  "الإسماعيلية": "ISMAILIA",
+  "السويس": "SUEZ",
+  "بور سعيد": "PORT SAID",
+  "الشرقية": "SHARKIA",
+  "الفيوم": "FAYOUM",
+  "بني سويف": "BANI SWEIF",
+  "المنيا": "MENIA",
+  "أسيوط": "ASSIUT",
+  "سوهاج": "SOUHAGE",
+  "قنا": "QENA",
+  "أسوان": "ASWAN",
+  "الأقصر": "LOUXOR",
+  "البحر الأحمر": "RED SEA",
+  "الوادي الجديد": "NEW VALLLEY",
+  "شمال سيناء": "NOURTH SINAI",
+  "جنوب سيناء": "SOUTH SINAI"
+};
+
+module.exports = cityMap;

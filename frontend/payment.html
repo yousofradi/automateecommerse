@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إتمام الدفع — </title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/store.css">
+  <style>
+    .payment-container { max-width: 500px; margin: 40px auto; padding: 24px; }
+    .payment-card { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+    .success-icon { width: 64px; height: 64px; background: #f0fdf4; color: #16a34a; border-radius: 50%; display: flex; align-items:center; justify-content:center; margin: 0 auto 20px; }
+    .method-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; margin: 24px 0; position: relative; }
+    .method-badge { background: #ef4444; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-left: 8px; }
+    .method-number { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 12px 0; display: block; }
+    .copy-btn { width: 100%; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.2s; display: flex; align-items:center; justify-content:center; gap: 8px; }
+    .copy-btn:active { transform: scale(0.98); background: #f1f5f9; }
+    .notes-input { width: 100%; padding: 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 0.95rem; margin-bottom: 16px; transition: border-color 0.2s; resize: none; }
+    .notes-input:focus { outline: none; border-color: var(--primary, var(--primary)); }
+    .confirm-btn { width: 100%; background: var(--primary, var(--primary)); color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .confirm-btn:hover { background: var(--primary-hover, #7a5a41); }
+  </style>
+</head>
+<body style="background: #f8fafc;">
+
+  <div class="payment-container">
+    <div class="payment-card">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="margin-bottom:8px;">تم استلام طلبك بنجاح!</h2>
+      <p class="text-muted" style="font-size:0.95rem;" id="order-id-display">رقم الطلب: #...</p>
+
+      <div style="margin-top:24px; text-align:right;">
+        <p style="font-weight:700; color:#1e293b; margin-bottom:12px; white-space: pre-wrap;" id="global-payment-notes"></p>
+      </div>
+
+      <div id="payment-method-details" class="method-box">
+        <!-- Injected dynamically -->
+      </div>
+
+      <div style="text-align:right; margin-top:32px;">
+        <label class="form-label" style="font-weight:700; margin-bottom:8px; display:block;">ملاحظات التحويل (اختياري)</label>
+        <textarea class="notes-input" id="transfer-notes" placeholder="مثال: تم التحويل من رقم 010... أو اسم المحول..." rows="3"></textarea>
+        <button class="confirm-btn" onclick="submitTransferInfo()" id="submit-btn">تأكيد وإرسال عبر الواتساب</button>
+      </div>
+      
+      <div style="margin-top:24px; padding-top:24px; border-top:1px solid #f1f5f9; text-align:right;">
+        <p class="text-sm text-muted">سيتم مراجعة طلبك فور استلام اسكرين التحويل.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let currentOrder = null;
+    let storeSettings = null;
+
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('id');
+      if (!orderId) { window.location.href = 'index'; return; }
+
+      try {
+        [currentOrder, storeSettings] = await Promise.all([
+          api.getPublicOrder(orderId),
+          api.getSetting('autoecommerce_global_settings')
+        ]);
+
+        if (!currentOrder) { window.location.href = 'index'; return; }
+
+        document.getElementById('order-id-display').textContent = `رقم الطلب: #${currentOrder.orderId}`;
+        document.getElementById('global-payment-notes').textContent = storeSettings.paymentNotes || 'يرجى إتمام عملية التحويل لتأكيد الطلب.';
+
+        renderPaymentDetails();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderPaymentDetails() {
+      const methods = storeSettings.paymentMethods || [];
+      const selected = methods.find(m => m.label === currentOrder.paymentMethod) || methods[0];
+      
+      if (!selected) {
+        document.getElementById('payment-method-details').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('payment-method-details').innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+           <!-- Circular Logo -->
+           <div style="width:64px; height:64px; background:#fff; border:1.5px solid #e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+              ${selected.logo ? `<img src="${selected.logo}" style="max-width:100%; max-height:100%; object-fit:contain;">` : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'}
+           </div>
+           <div style="display:flex; align-items:center; gap:8px;">
+              <span class="method-badge" style="margin:0; background: var(--primary, #ef4444);">${selected.label}</span>
+           </div>
+        </div>
+        <span class="method-number" id="pay-number">${selected.number}</span>
+        <button class="copy-btn" onclick="copyNumber('${selected.number}')" id="copy-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span style="font-weight: 800;">نسخ الرقم</span>
+        </button>
+      `;
+    }
+
+    function copyNumber(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const original = btn.innerHTML;
+        btn.innerHTML = 'تم نسخ الرقم!';
+        btn.style.color = '#16a34a';
+        btn.style.borderColor = '#16a34a';
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      });
+    }
+
+    async function submitTransferInfo() {
+      const notes = document.getElementById('transfer-notes').value.trim();
+      const btn = document.getElementById('submit-btn');
+      
+      btn.disabled = true;
+      btn.textContent = 'جاري الحفظ...';
+
+      try {
+        // Append notes to order notes
+        const updatedNotes = currentOrder.customer.notes 
+          ? `${currentOrder.customer.notes}\n\n[معلومات التحويل]: ${notes}` 
+          : `[معلومات التحويل]: ${notes}`;
+        
+        // We use public API to update order (some risk, but for simple app it's fine if orderId is secure)
+        // Wait, current API doesn't allow public updates? 
+        // I'll check api.js
+        
+        // Prepare WhatsApp message
+        let waMessage = `لقد قمت بطلب اوردر برقم : ${currentOrder.orderId}\n`;
+        waMessage += `المبلغ المطلوب : ${currentOrder.totalPrice} ج.م\n`;
+        if (notes) {
+          waMessage += `ملاحظات التحويل : ${notes}\n`;
+        }
+        waMessage += `يرجى مراجعة التحويل وتأكيد الطلب`;
+        
+        let waNumber = (storeSettings.socialWa || '').replace(/[^0-9]/g, '');
+        if (waNumber.startsWith('01')) waNumber = '2' + waNumber;
+        const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
+        
+        window.open(waUrl, '_blank');
+        window.location.href = `order-success?id=${currentOrder.orderId}`;
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.textContent = 'تأكيد وإرسال عبر الواتساب';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

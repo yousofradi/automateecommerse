@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل الطلب — لوحة التحكم</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .order-details-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .order-details-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .info-card {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .info-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+
+    .info-card-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .info-card-body {
+      padding: 20px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-details {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .item-img {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--border-color);
+    }
+
+    .item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .item-actions-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.95rem;
+    }
+
+    /* Modals for Editing */
+    .edit-input {
+      display: none;
+    }
+
+    /* ── Products Modal ── */
+    /* Global modal styles from style.css are used */
+    .modal-filters {
+      position: sticky;
+      top: 48px;
+      /* Header height is approx 48px */
+      background: #fff;
+      z-index: 9;
+      padding: 12px 20px 0 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 0;
+    }
+
+    .product-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .product-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .pli-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pli-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .pli-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 960px) {
+      .order-details-layout {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .product-card-item>div:last-child {
+        flex-wrap: wrap !important;
+      }
+
+      .product-card-item>div:first-child {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+
+      .flex-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+      }
+
+      .modal-overlay .modal-box {
+        width: 96% !important;
+        max-width: 96% !important;
+      }
+
+      .modal-overlay .modal-body .grid-2 {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <div class="admin-brand-header">
+        <div class="admin-brand-title store-name-text"></div>
+        <a href="#" target="_blank" class="admin-store-preview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          معاينة المتجر
+        </a>
+      </div>
+      <button class="sidebar-toggle"
+        style="position:absolute; top:20px; left:20px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#475569;">☰</button>
+
+      <nav class="admin-nav">
+        <a href="/">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          الرئيسية
+        </a>
+        <a href="orders.html" class="active">
+          <svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          الطلبات
+        </a>
+        <a href="customers.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          العملاء
+        </a>
+        <a href="products.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          المنتجات
+        </a>
+        <a href="collections.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          المجموعات
+        </a>
+        <a href="homepage.html">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          تخصيص الواجهة
+        </a>
+        <a href="shipment.html">
+          <svg viewBox="0 0 24 24">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          الشحن
+        </a>
+        <a href="settings.html">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          إعدادات المتجر
+        </a>
+        <a href="webhooks.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          Webhooks
+        </a>
+        <a href="#" onclick="logout()" class="logout">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          خروج
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div style="max-width:1300px">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+          <h1 class="page-title" style="margin:0; display:flex; align-items:center; gap:8px">
+            <a href="orders.html"
+              style="font-size:1.1rem; color:var(--text-main); text-decoration:none; font-weight:700; display:flex; align-items:center; gap:6px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+              الطلبات
+            </a>
+            <span id="page-order-id" style="display:none">تعديل الطلب #...</span>
+          </h1>
+          <div class="flex gap-12" style="position:relative;">
+            <button class="btn btn-secondary" onclick="toggleDetailsMenu(event)"
+              style="border-radius:24px; padding:8px 24px; background:#fff; border:1px solid #e2e8f0; color:#475569; font-weight:600; display:flex; align-items:center; gap:8px;">
+              المزيد
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="details-menu" class="dropdown-menu-box">
+              <button class="dropdown-item-btn" onclick="printOrderInvoice()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>طباعة الفاتورة</span>
+              </button>
+
+              <button class="dropdown-item-btn" onclick="archiveCurrentOrder()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                  <path d="m3.3 7 8.7 5 8.7-5" />
+                  <path d="M12 22V12" />
+                </svg>
+                <span>أرشفة</span>
+              </button>
+
+              <button class="dropdown-item-btn danger" onclick="cancelOrder()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <span>إلغاء الطلب</span>
+              </button>
+
+              <div class="dropdown-divider"></div>
+
+              <button class="dropdown-item-btn danger" onclick="deleteCurrentOrder()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                <span style="font-weight:600;">حذف نهائي</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-details-layout">
+          <!-- EMPTY LEFT COLUMN OR REMOVE IF NOT NEEDED -->
+          <!-- We keep it to maintain the grid structure but it can be used for other side info later -->
+          <div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div>
+            <!-- Products -->
+            <div class="info-card">
+              <div class="info-card-header"
+                style="background:#fff; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="color:#1e293b; font-weight:700; font-size: 1.1rem; margin: 0;">منتجات الطلب</h3>
+                <button class="btn btn-secondary btn-sm" onclick="openProductsModal()"
+                  style="background:#fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 16px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 1.1rem; margin-top: -2px;">+</span> أضف منتج
+                </button>
+              </div>
+              <div class="info-card-body" id="order-items-container" style="padding: 0;">
+                <!-- Items injected here -->
+              </div>
+              <div id="ready-btn-container" style="padding: 16px 20px; border-top: 1px solid #f1f5f9; display: none;">
+                <button class="btn" id="btn-make-ready" onclick="markAsReady()"
+                  style="background:#0f766e; color:#fff; border-radius:14px; padding:12px 48px; font-weight:700; font-size:1.05rem; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15); border:none;">جاهز</button>
+              </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="info-card">
+              <div class="info-card-header" style="background:#fff">
+                <h3 style="color:#000;font-weight:600;display:flex;align-items:center;gap:8px;">
+                  الدفع
+                  <span id="view-payment-status" style="font-size:0.75rem;padding:4px 8px;border-radius:12px;"></span>
+                </h3>
+                <div class="flex gap-8">
+                  <button class="btn btn-secondary btn-sm" onclick="openOrderDiscountModal()"
+                    style="background:#fff;border-color:var(--border-color)">تطبيق خصم</button>
+                </div>
+              </div>
+              <div class="info-card-body">
+                <div class="summary-row">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <span>المجموع الجزئي</span>
+                    <span style="color:var(--text-muted); font-size:0.85rem;"><span id="sum-items-count"
+                        class="loading-hide">0</span> عناصر</span>
+                  </div>
+                  <span id="sum-subtotal" class="loading-hide">0 ج.م</span>
+                </div>
+                <div class="summary-row">
+                  <span style="color:var(--text-muted)">الشحن</span>
+                  <span id="sum-shipping" class="loading-hide">0 ج.م</span>
+                </div>
+                <div class="summary-row" id="sum-discount-row" style="display:none;">
+                  <span id="sum-discount-label" style="color:var(--danger)">خصم الطلب</span>
+                  <span id="sum-discount">0 ج.م</span>
+                </div>
+                <div class="summary-row"
+                  style="font-weight:700;margin-top:12px;border-top:1px solid var(--border-color);padding-top:12px">
+                  <span>المجموع</span>
+                  <span id="sum-total" class="loading-hide">0 ج.م</span>
+                </div>
+
+                <div style="margin-top:24px;border-top:1px solid var(--border-color);padding-top:16px">
+                  <div class="summary-row">
+                    <span style="color:var(--text-muted)">وسيلة الدفع</span>
+                    <span id="view-payment-method"></span>
+                  </div>
+                  <div class="summary-row">
+                    <span style="color:var(--text-muted)">المدفوع</span>
+                    <span id="view-paid-amount">0 ج.م</span>
+                  </div>
+                  <div class="summary-row" style="font-weight:700">
+                    <span>المتبقي</span>
+                    <span id="sum-remaining">0 ج.م</span>
+                  </div>
+
+                  <div class="flex gap-8 mt-16" style="justify-content:flex-start">
+                    <button class="btn btn-primary btn-sm" id="btn-mark-paid" onclick="markFullyPaid()">مدفوع
+                      بالكامل</button>
+                    <button class="btn btn-secondary btn-sm" onclick="openPaymentModal()">تعديل الدفع</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Info Consolidated -->
+            <div class="info-card" id="card-customer">
+              <div class="info-card-header">
+                <h3>بيانات العميل</h3>
+                <button class="btn btn-sm" onclick="openCustomerModal()"
+                  style="background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="info-card-body">
+                <div style="font-weight:700;color:var(--primary);margin-bottom:16px;font-size:1.1rem" id="view-c-name">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                  <h4 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">معلومات الاتصال</h4>
+                  <div style="font-size:0.95rem;margin-bottom:4px" id="view-c-phone"></div>
+                  <div style="font-size:0.95rem;color:var(--text-muted)" id="view-c-phone2"></div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                  <h4 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">عنوان الشحن</h4>
+                  <div style="font-size:0.95rem;margin-bottom:4px" id="view-c-address"></div>
+                  <div style="font-size:0.95rem;color:var(--text-muted)" id="view-c-gov"></div>
+                </div>
+
+                <div id="view-c-notes-container">
+                  <h4 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">ملاحظات</h4>
+                  <div style="font-size:0.95rem" id="view-c-notes"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Include Products Modal from order-form -->
+  <div class="modal-overlay" id="products-modal" style="display: none;">
+    <div class="modal-box" style="max-height: 600px;">
+      <div class="modal-header">
+        <button type="button" class="modal-close" onclick="closeProductsModal()">×</button>
+        <h3>إضافة منتجات</h3>
+        <div style="width:24px"></div>
+      </div>
+      <div class="modal-filters">
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <select class="form-control" id="modal-col-filter" style="flex:1;min-width:140px"
+            onchange="renderModalProducts()">
+            <option value="">اختر مجموعة</option>
+          </select>
+          <input type="text" class="form-control" id="modal-search" placeholder="ابحث عن منتجات"
+            style="flex:2;min-width:200px" oninput="renderModalProducts()" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 0 20px 20px 20px">
+        <div id="modal-products-list"></div>
+      </div>
+      <div class="modal-footer" style="display:flex; gap:12px;">
+        <button type="button" class="btn btn-secondary" onclick="closeProductsModal()"
+          style="background:#fff;color:#333;border:1px solid #ccc; flex:1; margin:0;">إلغاء</button>
+        <button type="button" class="btn btn-primary" onclick="addSelectedProducts()" style="flex:1; margin:0;">أضف
+          منتج</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Edit Modal -->
+  <div class="modal-overlay" id="customer-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <button type="button" class="modal-close" onclick="closeModal('customer-modal')">×</button>
+        <h3>تعديل بيانات العميل</h3>
+        <div style="width:24px"></div>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-16">
+          <label class="form-label">الاسم</label>
+          <input type="text" id="modal-c-name" class="form-control" placeholder="اسم العميل" readonly
+            style="background-color: #f8fafc; cursor: not-allowed; border-color: #e2e8f0; color: #64748b;">
+        </div>
+        <div class="grid-2" style="gap:16px; margin-bottom:16px;">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">رقم الهاتف</label>
+            <input type="tel" id="modal-c-phone" class="form-control" placeholder="01xxxxxxxxx" readonly
+              style="background-color: #f8fafc; cursor: not-allowed; border-color: #e2e8f0; color: #64748b;">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">هاتف آخر</label>
+            <input type="tel" id="modal-c-phone2" class="form-control" placeholder="اختياري">
+          </div>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">المحافظة</label>
+          <select id="modal-c-gov" class="form-control">
+            <option value="">اختر المحافظة</option>
+          </select>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">العنوان</label>
+          <textarea id="modal-c-address" class="form-control" rows="3" placeholder="العنوان بالتفصيل"></textarea>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">ملاحظات</label>
+          <textarea id="modal-c-notes" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-start; gap: 12px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 32px; font-weight:600;"
+          onclick="applyCustomerChanges()">تطبيق</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 32px; font-weight:600;"
+          onclick="closeModal('customer-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Edit Modal -->
+  <div class="modal-overlay" id="payment-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 400px;">
+      <div class="modal-header">
+        <button type="button" class="modal-close" onclick="closeModal('payment-modal')">×</button>
+        <h3>تعديل الدفع</h3>
+        <div style="width:24px"></div>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-16">
+          <label class="form-label">وسيلة الدفع</label>
+          <select id="modal-payment-method" class="form-control">
+            <option value="vodafone_cash">فودافون كاش</option>
+            <option value="instapay">إنستاباي</option>
+          </select>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">المبلغ المدفوع (ج.م)</label>
+          <input type="number" id="modal-paid-amount" class="form-control" min="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="applyPaymentChanges()">تطبيق</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('payment-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Discount Modal -->
+  <div class="modal-overlay" id="item-discount-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 400px; border-radius: 16px;">
+      <div class="modal-header" style="border:none; padding-bottom:0;">
+        <h3 style="width:100%; text-align:right; font-size:1.1rem; color:#1e293b; font-weight:600;">تعديل السعر (خصم /
+          زيادة)</h3>
+      </div>
+      <div class="modal-body" style="padding-top:12px;">
+        <input type="hidden" id="modal-item-idx">
+        <div class="form-group">
+          <label style="display:block;margin-bottom:8px;font-size:0.85rem;color:var(--text-muted);">لإضافة رسوم إضافية،
+            أدخل قيمة سالبة (مثل -50)</label>
+          <div style="position:relative; display:flex; align-items:center;">
+            <input type="number" id="modal-item-discount" class="form-control"
+              style="border-radius:12px; padding:12px 16px; padding-left:45px; text-align:right;"
+              placeholder="أدخل القيمة">
+            <span style="position:absolute; left:16px; color:#64748b; font-size:0.9rem;">ج.م.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="border:none; justify-content: flex-start; gap: 12px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="applyItemDiscount()">تطبيق</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="closeModal('item-discount-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Quantity Modal -->
+  <div class="modal-overlay" id="item-qty-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 400px; border-radius: 16px;">
+      <div class="modal-header" style="border:none; padding-bottom:0;">
+        <h3 style="width:100%; text-align:right; font-size:1.1rem; color:#1e293b; font-weight:600;">تعديل الكمية</h3>
+      </div>
+      <div class="modal-body" style="padding-top:12px;">
+        <input type="hidden" id="modal-qty-idx">
+        <div class="form-group">
+          <label style="display:block;margin-bottom:8px;font-size:0.85rem;color:var(--text-muted);">الكمية
+            الجديدة:</label>
+          <div style="position:relative; display:flex; align-items:center;">
+            <input type="number" id="modal-item-qty" class="form-control"
+              style="border-radius:12px; padding:12px 16px; text-align:right;" min="1" placeholder="أدخل الكمية">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="border:none; justify-content: flex-start; gap: 12px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="applyItemQty()">تطبيق</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="closeModal('item-qty-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Discount Modal -->
+  <div class="modal-overlay" id="order-discount-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 400px; border-radius: 16px;">
+      <div class="modal-header" style="border:none; padding-bottom:0;">
+        <h3 style="width:100%; text-align:right; font-size:1.1rem; color:#1e293b; font-weight:600;">تعديل إجمالي الطلب
+          (خصم / زيادة)</h3>
+      </div>
+      <div class="modal-body" style="padding-top:12px;">
+        <div class="form-group">
+          <label style="display:block;margin-bottom:8px;font-size:0.85rem;color:var(--text-muted);">لإضافة رسوم إضافية،
+            أدخل قيمة سالبة (مثل -50)</label>
+          <div style="position:relative; display:flex; align-items:center;">
+            <input type="number" id="modal-order-discount" class="form-control"
+              style="border-radius:12px; padding:12px 16px; padding-left:45px; text-align:right;"
+              placeholder="أدخل القيمة">
+            <span style="position:absolute; left:16px; color:#64748b; font-size:0.9rem;">ج.م.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="border:none; justify-content: flex-start; gap: 12px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="applyOrderDiscount()">تطبيق</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 48px; font-weight:600;"
+          onclick="closeModal('order-discount-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready Confirmation Modal (Preparing Products UI) -->
+  <div class="modal-overlay" id="ready-confirm-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 500px; border-radius: 24px; background: #fff; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+      <div class="modal-header" style="background: #fff; padding: 24px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; justify-content: space-between; position: relative;">
+        <button type="button" class="modal-close" onclick="closeModal('ready-confirm-modal')" style="margin: 0; font-size: 1.5rem; color: #94a3b8; position: absolute; left: 24px; top: 24px;">×</button>
+        <div style="width: 100%; text-align: right; padding-right: 32px;">
+          <h3 style="margin: 0; font-size: 1.25rem; color: #1e293b; font-weight: 800;">تجهيز المنتجات</h3>
+          <div id="ready-modal-order-id" style="font-size: 1.1rem; color: #64748b; margin-top: 4px; font-weight: 600;">#...</div>
+        </div>
+      </div>
+      
+      <div class="modal-body" id="ready-modal-items" style="padding: 0; overflow-y: auto; flex: 1;">
+        <!-- Items will be injected here -->
+      </div>
+      
+      <div class="modal-footer" style="background: #fff; padding: 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-start; gap: 16px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#f1f5f9; color:#94a3b8; border-radius:30px; padding:12px 32px; font-weight:700; font-size: 1.1rem; border: none; cursor: not-allowed;"
+          id="ready-update-btn" disabled>تحديث</button>
+        <button type="button" class="btn"
+          style="background:#fff; border: 2px solid #f1f5f9; color:#1e293b; border-radius:30px; padding:12px 32px; font-weight:700; font-size: 1.1rem;"
+          onclick="closeModal('ready-confirm-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-confirm-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 450px; border-radius: 16px;">
+      <div class="modal-header" style="border:none; padding-bottom:8px;">
+        <h3 style="width:100%; text-align:right; font-size:1.1rem; color:#1e293b; font-weight:600;">هل أنت متأكد أنك
+          تريد إزالة هذا العنصر؟</h3>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <input type="hidden" id="modal-delete-idx">
+        <div id="delete-item-preview"
+          style="border:1px solid #f1f5f9; border-radius:12px; padding:12px; display:flex; align-items:center; justify-content:space-between; flex-direction:row-reverse; background:#fff;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="border:none; justify-content: flex-start; gap: 12px; flex-direction: row-reverse; border-top: 1px solid #f1f5f9; padding-top:20px;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 40px; font-weight:600;"
+          onclick="confirmRemoveItem()">إزالة</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 40px; font-weight:600;"
+          onclick="closeModal('delete-confirm-modal')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/order-details.js"></script>
+</body>
+
+</html>

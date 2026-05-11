@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل العميل — لوحة التحكم</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .customer-layout {
+      display: grid;
+      grid-template-columns: 1fr 3fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .customer-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .info-card {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .info-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+
+    .info-card-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .info-card-body {
+      padding: 20px;
+    }
+
+    .stat-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      text-align: center;
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-active {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    /* Global modal styles from style.css are used */
+
+    .stats-container {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .stats-container {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .stat-box {
+        padding: 16px;
+      }
+
+      .hide-mobile {
+        display: none !important;
+      }
+
+      .customer-layout {
+        gap: 16px;
+      }
+
+      .info-card-body {
+        padding: 16px;
+      }
+
+      .table-wrapper table {
+        min-width: auto !important;
+      }
+    }
+
+    #view-c-address {
+      word-wrap: break-word;
+      white-space: pre-line;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="admin-layout">
+
+    <aside class="admin-sidebar">
+      <div class="admin-brand-header">
+        <div class="admin-brand-title store-name-text"></div>
+        <a href="#" target="_blank" class="admin-store-preview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          معاينة المتجر
+        </a>
+      </div>
+      <button class="sidebar-toggle"
+        style="position:absolute; top:20px; left:20px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#475569;">☰</button>
+
+      <nav class="admin-nav">
+        <a href="/">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          الرئيسية
+        </a>
+        <a href="orders.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          الطلبات
+        </a>
+        <a href="customers.html" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          العملاء
+        </a>
+        <a href="products.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          المنتجات
+        </a>
+        <a href="collections.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          المجموعات
+        </a>
+        <a href="homepage.html">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          تخصيص الواجهة
+        </a>
+        <a href="shipment.html">
+          <svg viewBox="0 0 24 24">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          الشحن
+        </a>
+        <a href="settings.html">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          إعدادات المتجر
+        </a>
+        <a href="webhooks.html">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          Webhooks
+        </a>
+        <a href="#" onclick="logout()" class="logout">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          خروج
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div style="max-width:1300px">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+          <h1 class="page-title" style="margin:0; display:flex; align-items:center; gap:8px">
+            <a href="customers.html"
+              style="font-size:1.1rem; color:var(--text-main); text-decoration:none; font-weight:700; display:flex; align-items:center; gap:6px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+              العملاء
+            </a>
+            <span id="page-customer-name" style="display:none">جاري التحميل...</span>
+            <span class="status-badge status-active">نشط</span>
+          </h1>
+        </div>
+
+        <div class="customer-layout">
+          <!-- LEFT COLUMN: Customer Info -->
+          <div>
+            <div class="info-card">
+              <div class="info-card-header">
+                <h3>بيانات العميل</h3>
+                <button class="btn btn-sm" onclick="openEditModal()"
+                  style="background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="info-card-body">
+                <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+                  <div id="view-c-avatar" class="avatar" style="display:none"></div>
+                  <div>
+                    <div style="font-weight:700; color:#1e293b; font-size:1.2rem;" id="view-c-name">—</div>
+                    <div style="font-size:0.85rem; color:#64748b;" id="view-c-registered">—</div>
+                  </div>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                  <h4
+                    style="font-size:0.85rem; color:#64748b; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                      </path>
+                    </svg>
+                    معلومات الاتصال
+                  </h4>
+                  <div style="font-size:0.95rem; font-weight:600; color:#0f766e;" id="view-c-phone">—</div>
+                  <div style="font-size:0.95rem; color:#64748b; margin-top:4px;" id="view-c-phone2"></div>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                  <h4 style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">عنوان الشحن</h4>
+                  <div style="font-size:0.95rem; color:#1e293b;" id="view-c-address">—</div>
+                  <div style="font-size:0.95rem; color:#64748b; margin-top:4px;" id="view-c-gov">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Stats & Orders -->
+          <div>
+            <div class="stats-container">
+              <div class="stat-box">
+                <div class="stat-value" id="stat-total-spent">—</div>
+                <div class="stat-label">إجمالي الإنفاق</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="stat-order-count">—</div>
+                <div class="stat-label">عدد الطلبات</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="stat-last-order">—</div>
+                <div class="stat-label">آخر طلب</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header" style="background:#fff">
+                <h3 style="color:#000;font-weight:600">الطلبات</h3>
+              </div>
+              <div class="table-wrapper" style="box-shadow:none; border-radius:0; border:none; margin:0;">
+                <table style="width:100%; border-collapse:collapse; text-align:right;">
+                  <thead>
+                    <tr>
+                      <th style="padding:16px; font-size:0.85rem; color:#64748b; border-bottom:1px solid #f1f5f9;">رقم
+                        الطلب</th>
+                      <th style="padding:16px; font-size:0.85rem; color:#64748b; border-bottom:1px solid #f1f5f9;">
+                        التاريخ</th>
+                      <th style="padding:16px; font-size:0.85rem; color:#64748b; border-bottom:1px solid #f1f5f9;">
+                        الإجمالي</th>
+                      <th class="hide-mobile"
+                        style="padding:16px; font-size:0.85rem; color:#64748b; border-bottom:1px solid #f1f5f9;">الحالة
+                      </th>
+                      <th class="hide-mobile"
+                        style="padding:16px; font-size:0.85rem; color:#64748b; border-bottom:1px solid #f1f5f9;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-tbody">
+                    <tr>
+                      <td colspan="5" class="text-center" style="padding:32px;">
+                        <div class="spinner"></div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Customer Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <button type="button" class="modal-close" onclick="closeEditModal()">×</button>
+        <h3 style="width:100%; text-align:center;">تعديل بيانات العميل</h3>
+        <div style="width:24px"></div>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-16">
+          <label class="form-label">الاسم</label>
+          <input type="text" id="modal-c-name" class="form-control" placeholder="اسم العميل" readonly style="background-color: #f8fafc; cursor: not-allowed; border-color: #e2e8f0; color: #64748b;">
+        </div>
+        <div class="grid-2" style="gap:16px; margin-bottom:16px;">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">رقم الهاتف</label>
+            <input type="tel" id="modal-c-phone" class="form-control" placeholder="01xxxxxxxxx" readonly style="background-color: #f8fafc; cursor: not-allowed; border-color: #e2e8f0; color: #64748b;">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">هاتف آخر</label>
+            <input type="tel" id="modal-c-phone2" class="form-control" placeholder="اختياري">
+          </div>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">المحافظة</label>
+          <select id="modal-c-gov" class="form-control">
+            <option value="">اختر المحافظة</option>
+          </select>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">العنوان</label>
+          <textarea id="modal-c-address" class="form-control" rows="3" placeholder="العنوان بالتفصيل"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-start; gap: 12px; flex-direction: row-reverse;">
+        <button type="button" class="btn"
+          style="background:#10b981; color:#fff; border-radius:24px; padding:8px 32px; font-weight:600;"
+          onclick="applyChanges()">تطبيق</button>
+        <button type="button" class="btn"
+          style="background:#fff; border:1px solid #e2e8f0; color:#1e293b; border-radius:24px; padding:8px 32px; font-weight:600;"
+          onclick="closeEditModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/customer-details.js"></script>
+</body>
+
+</html>

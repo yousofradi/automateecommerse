@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول — Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-body)">
+  <div class="admin-card" style="max-width:420px;width:100%;padding:40px;margin:20px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div id="login-brand-logo" style="margin-bottom:16px; color:var(--primary); opacity:0.8; height:60px; display:flex; align-items:center; justify-content:center;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:0 auto;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </div>
+      <h1 style="font-size:1.5rem;margin-bottom:6px"><span class="store-name-text">Admin</span> Admin</h1>
+      <p class="text-muted">أدخل مفتاح الوصول للمتابعة</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">مفتاح الإدارة (API Key)</label>
+      <input type="password" id="api-key" class="form-control" placeholder="••••••••••••"
+        style="font-size:1rem;padding:12px 14px"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div id="login-error" style="color:var(--danger);font-size:0.88rem;margin-bottom:12px;display:none;align-items:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      مفتاح غير صحيح، يرجى المحاولة مرة أخرى
+    </div>
+    <button class="btn btn-primary btn-block" id="login-btn" onclick="doLogin()" style="padding:13px;font-size:1rem">
+      دخول
+    </button>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // If already logged in, redirect
+    if (localStorage.getItem('adminKey')) window.location.href = 'index';
+
+    async function doLogin() {
+      const key = document.getElementById('api-key').value.trim();
+      const btn = document.getElementById('login-btn');
+      const err = document.getElementById('login-error');
+      if (!key) return;
+
+      btn.disabled = true;
+      btn.textContent = 'جارٍ التحقق...';
+      err.style.display = 'none';
+
+      localStorage.setItem('adminKey', key);
+      const ok = await api.checkAdmin();
+
+      if (ok) {
+        localStorage.setItem('loginTimestamp', Date.now().toString());
+        window.location.href = 'index';
+      } else {
+        localStorage.removeItem('adminKey');
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'دخول';
+      }
+    }
+  </script>
+</body>
+</html>
