@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const [productsRes, shippingRes, settings] = await Promise.all([
       api.getProducts(1, 1000, true).catch(() => []),
       api.getShipping().catch(() => ({})),
-      api.getSetting('autoecommerce_global_settings').catch(() => ({}))
+      api.getSetting('sundura_global_settings').catch(() => ({}))
     ]);
 
     const products = (productsRes.products || productsRes).filter(p => p.status !== 'draft');

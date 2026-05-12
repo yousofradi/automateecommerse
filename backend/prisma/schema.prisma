@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+// Categories
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+
+  products    Product[] @relation("ProductCategories")
+  @@map("categories")
+}
+
+// Products
+model Product {
+  id          Int          @id @default(autoincrement())
+  name        String
+  slug        String       @unique
+  description String?
+  basePrice   Decimal      @db.Decimal(10,2)
+  salePrice   Decimal?     @db.Decimal(10,2)
+  imageUrl    String?
+  images      String[]     @default([])
+  active      Boolean      @default(true)
+  status      ProductStatus @default(ACTIVE)
+  sortOrder   Int          @default(0)
+
+  // Relations
+  categories   Category[]   @relation("ProductCategories")
+  options     OptionGroup[]
+  variants    Variant[]
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+}
+
+// Option Groups & Values
+model OptionGroup {
+  id        Int          @id @default(autoincrement())
+  name      String
+  required  Boolean      @default(false)
+  product   Product      @relation(fields: [productId], references: [id])
+  productId Int
+  values    OptionValue[]
+  @@map("option_groups")
+}
+
+model OptionValue {
+  id          Int          @id @default(autoincrement())
+  label       String
+  price       Decimal      @db.Decimal(10,2) @default(0)
+  salePrice   Decimal?     @db.Decimal(10,2)
+  optionGroup OptionGroup   @relation(fields: [groupId], references: [id])
+  groupId     Int
+  @@map("option_values")
+}
+
+// Variants
+model Variant {
+  id          Int       @id @default(autoincrement())
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   Int
+  combination Json      // e.g. {"color":"black","size":"M"}
+  price       Decimal   @db.Decimal(10,2) @default(0)
+  salePrice   Decimal?  @db.Decimal(10,2)
+  cost        Decimal?  @db.Decimal(10,2)
+  quantity    Int?      // null => unlimited
+  imageUrl    String?
+  active      Boolean   @default(true)
+
+  @@map("variants")
+}
+
+// Orders & OrderItems
+model Order {
+  id            Int        @id @default(autoincrement())
+  orderId       String     @unique
+  user          User?      @relation(fields: [userId], references: [id])
+  userId        Int?
+  status        OrderStatus @default(PENDING)
+  discount      Decimal    @default(0) @db.Decimal(10,2)
+  totalPrice    Decimal    @db.Decimal(10,2)
+  shippingFee   Decimal    @db.Decimal(10,2)
+  paymentMethod String
+  paid          Boolean    @default(false)
+  paidAmount    Decimal    @default(0) @db.Decimal(10,2)
+  archived      Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  items         OrderItem[]
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  CANCELLED
+  READY
+}
+
+model OrderItem {
+  id            Int      @id @default(autoincrement())
+  order         Order    @relation(fields: [orderId], references: [id])
+  orderId       Int
+  productId     Int
+  name          String
+  imageUrl      String?
+  basePrice     Decimal   @db.Decimal(10,2)
+  selectedOptions Json?    // [{groupName:"Color",label:"Red",price:0}]
+  finalPrice    Decimal   @db.Decimal(10,2)
+  quantity      Int
+  discount      Decimal   @default(0) @db.Decimal(10,2)
+
+  @@map("order_items")
+}

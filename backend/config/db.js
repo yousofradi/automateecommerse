@@ -1,17 +1,18 @@
-const { createClient } = require('@supabase/supabase-js');
+const mongoose = require('mongoose');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const connectDB = async () => {
+  try {
+    const uri = process.env.DB_URI;
+    if (!uri) {
+      console.error('ERROR: DB_URI environment variable is not set');
+      process.exit(1);
+    }
+    await mongoose.connect(uri);
+    console.log('✅ MongoDB connected successfully');
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+    process.exit(1);
+  }
+};
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { persistSession: false }
-});
-
-console.log('✅ Supabase client initialized');
-
-module.exports = supabase;
+module.exports = connectDB;

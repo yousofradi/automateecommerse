@@ -27,7 +27,7 @@ self.addEventListener('fetch', e => {
 
 // ── Push Notification Handler ──
 self.addEventListener('push', event => {
-  let data = { title: 'AutoEcommerce Admin', body: 'New notification' };
+  let data = { title: 'Sundura Admin', body: 'New notification' };
   try {
     data = event.data.json();
   } catch (e) {

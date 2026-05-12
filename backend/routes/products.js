@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/db');
+const Product = require('../models/Product');
 const adminAuth = require('../middleware/adminAuth');
 const multer = require('multer');
 const csv = require('csv-parser');
@@ -11,175 +11,10 @@ const upload = multer({ dest: 'uploads/' });
 
 // ── Caching ──────────────────────────────────────────────
 let productCache = new Map();
-const CACHE_DURATION = 30 * 1000; // 30 seconds
+const CACHE_DURATION = 30 * 1000; // 30 seconds for better performance
 
 function clearCache() {
   productCache.clear();
-}
-
-// ── Helper: Fetch full product with relations ────────────
-async function getFullProduct(productId) {
-  const { data: product, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', productId)
-    .single();
-  if (error || !product) return null;
-  return await enrichProduct(product);
-}
-
-async function enrichProduct(product) {
-  // Fetch images
-  const { data: images } = await supabase
-    .from('product_images')
-    .select('url')
-    .eq('product_id', product.id)
-    .order('position');
-  product.images = (images || []).map(i => i.url);
-  product.imageUrl = product.image_url;
-
-  // Fetch collection IDs
-  const { data: colLinks } = await supabase
-    .from('product_collections')
-    .select('collection_id')
-    .eq('product_id', product.id);
-  product.collectionIds = (colLinks || []).map(c => c.collection_id);
-  product.collectionId = product.collectionIds[0] || null;
-
-  // Fetch options with values
-  const { data: options } = await supabase
-    .from('product_options')
-    .select('id, name, required, position')
-    .eq('product_id', product.id)
-    .order('position');
-
-  if (options && options.length > 0) {
-    for (const opt of options) {
-      const { data: values } = await supabase
-        .from('option_values')
-        .select('id, label, price, sale_price')
-        .eq('option_id', opt.id)
-        .order('position');
-      opt.values = (values || []).map(v => ({
-        label: v.label,
-        price: Number(v.price),
-        salePrice: v.sale_price != null ? Number(v.sale_price) : null
-      }));
-    }
-  }
-  product.options = options || [];
-
-  // Fetch variants
-  const { data: variants } = await supabase
-    .from('product_variants')
-    .select('*')
-    .eq('product_id', product.id);
-  product.variants = (variants || []).map(v => ({
-    combination: v.combination,
-    price: Number(v.price),
-    salePrice: v.sale_price != null ? Number(v.sale_price) : null,
-    cost: v.cost != null ? Number(v.cost) : null,
-    quantity: v.quantity,
-    imageUrl: v.image_url,
-    active: v.active
-  }));
-
-  // Map snake_case to camelCase for frontend compat
-  product.basePrice = Number(product.base_price);
-  product.salePrice = product.sale_price != null ? Number(product.sale_price) : null;
-  product.sortOrder = product.sort_order;
-  product.createdAt = product.created_at;
-  product.updatedAt = product.updated_at;
-  // Keep _id alias for frontend compat
-  product._id = product.id;
-
-  return product;
-}
-
-async function enrichProducts(products) {
-  return Promise.all(products.map(p => enrichProduct(p)));
-}
-
-// ── Helper: Save product relations ──────────────────────
-async function saveProductRelations(productId, body) {
-  // Save images
-  if (Array.isArray(body.images)) {
-    await supabase.from('product_images').delete().eq('product_id', productId);
-    if (body.images.length > 0) {
-      const imageRows = body.images.map((url, i) => ({
-        product_id: productId,
-        url,
-        position: i
-      }));
-      await supabase.from('product_images').insert(imageRows);
-    }
-  }
-
-  // Save collection associations
-  if (Array.isArray(body.collectionIds)) {
-    await supabase.from('product_collections').delete().eq('product_id', productId);
-    if (body.collectionIds.length > 0) {
-      const colRows = body.collectionIds.map(cid => ({
-        product_id: productId,
-        collection_id: cid
-      }));
-      await supabase.from('product_collections').insert(colRows);
-    }
-  } else if (body.collectionId) {
-    await supabase.from('product_collections').delete().eq('product_id', productId);
-    await supabase.from('product_collections').insert({
-      product_id: productId,
-      collection_id: body.collectionId
-    });
-  }
-
-  // Save options
-  if (Array.isArray(body.options)) {
-    // Delete existing options (cascade deletes values)
-    await supabase.from('product_options').delete().eq('product_id', productId);
-    for (let i = 0; i < body.options.length; i++) {
-      const opt = body.options[i];
-      const { data: optRow } = await supabase
-        .from('product_options')
-        .insert({
-          product_id: productId,
-          name: opt.name,
-          required: opt.required || false,
-          position: i
-        })
-        .select()
-        .single();
-
-      if (optRow && Array.isArray(opt.values)) {
-        const valRows = opt.values.map((v, j) => ({
-          option_id: optRow.id,
-          label: v.label,
-          price: v.price || 0,
-          sale_price: v.salePrice ?? v.sale_price ?? null,
-          position: j
-        }));
-        await supabase.from('option_values').insert(valRows);
-      }
-    }
-  }
-
-  // Save variants
-  if (Array.isArray(body.variants)) {
-    await supabase.from('product_variants').delete().eq('product_id', productId);
-    if (body.variants.length > 0) {
-      const varRows = body.variants.map(v => ({
-        product_id: productId,
-        combination: v.combination || {},
-        price: v.price || 0,
-        sale_price: v.salePrice ?? v.sale_price ?? null,
-        cost: v.cost ?? null,
-        quantity: v.quantity ?? null,
-        image_url: v.imageUrl || v.image_url || '',
-        active: v.active !== false
-      }));
-      await supabase.from('product_variants').insert(varRows);
-    }
-  }
 }
 
 // ── Public ──────────────────────────────────────────────
@@ -188,7 +23,7 @@ async function saveProductRelations(productId, body) {
 router.get('/', async (req, res) => {
   try {
     const { page, limit, admin, collectionId, search, hasOptions } = req.query;
-
+    
     // Simple caching for public requests
     const cacheKey = JSON.stringify({ page, limit, admin, collectionId, search, hasOptions });
     if (admin !== 'true' && productCache.has(cacheKey)) {
@@ -198,135 +33,118 @@ router.get('/', async (req, res) => {
       }
     }
 
-    let query = supabase.from('products').select('*', { count: 'exact' });
-
+    const query = {};
+    
     // If not admin request, only show active products
     if (admin !== 'true') {
-      query = query.not('active', 'eq', false).not('status', 'eq', 'draft');
-      // Hide out-of-stock: quantity is null (unlimited) or > 0
-      query = query.or('quantity.is.null,quantity.gt.0');
+      query.active = { $ne: false };
+      query.status = { $ne: 'draft' };
+      // Hide out-of-stock products (quantity === 0) from storefront
+      // quantity: null or undefined means unlimited
+      query.$and = [
+        { $or: [{ quantity: null }, { quantity: { $gt: 0 } }] }
+      ];
     }
 
     // Server-side search by name
     if (search) {
-      query = query.ilike('name', `%${search}%`);
+      query.name = { $regex: search, $options: 'i' };
+    }
+
+    // Filter by variable products (has at least one option group)
+    if (hasOptions === 'true') {
+      query.options = { $exists: true, $type: 'array', $ne: [] };
     }
 
     // Filter by collection
     if (collectionId) {
-      // Get product IDs in this collection
-      const { data: colProducts } = await supabase
-        .from('product_collections')
-        .select('product_id')
-        .eq('collection_id', collectionId);
-      const productIds = (colProducts || []).map(cp => cp.product_id);
-      if (productIds.length === 0) {
-        const emptyResult = page || limit
-          ? { products: [], total: 0, page: 1, totalPages: 0 }
-          : [];
-        return res.json(emptyResult);
+      const colFilter = {
+        $or: [
+          { collectionId: collectionId },
+          { collectionIds: collectionId }
+        ]
+      };
+      // Merge with existing $and if present
+      if (query.$and) {
+        query.$and.push(colFilter);
+      } else {
+        query.$and = [colFilter];
       }
-      query = query.in('id', productIds);
     }
 
-    // Filter by variable products (has at least one option group)
-    let hasOptionsFilter = false;
-    if (hasOptions === 'true') {
-      const { data: optProducts } = await supabase
-        .from('product_options')
-        .select('product_id');
-      const optProductIds = [...new Set((optProducts || []).map(o => o.product_id))];
-      if (optProductIds.length === 0) {
-        return res.json(page || limit ? { products: [], total: 0, page: 1, totalPages: 0 } : []);
-      }
-      query = query.in('id', optProductIds);
-      hasOptionsFilter = true;
-    }
-
-    // Sort
-    query = query.order('created_at', { ascending: false });
-
-    // Check for manual ordering in collection
+    let sortObj = { createdAt: -1 };
+    
+    // Support manual sorting if collectionId is provided
     let manualOrder = null;
     if (collectionId) {
-      const { data: orderData } = await supabase
-        .from('collection_product_order')
-        .select('product_id, position')
-        .eq('collection_id', collectionId)
-        .order('position');
-      if (orderData && orderData.length > 0) {
-        manualOrder = orderData.map(o => o.product_id);
+      const Collection = require('../models/Collection');
+      const col = await Collection.findById(collectionId).select('productOrder');
+      if (col && col.productOrder && col.productOrder.length > 0) {
+        manualOrder = col.productOrder.map(id => id.toString());
       }
     }
+
+    // Optimization: Don't fetch description for listings
+    const fieldsToSelect = admin === 'true' ? '' : '-description';
 
     if (page || limit) {
       const pageNum = parseInt(page) || 1;
       const limitNum = parseInt(limit) || 20;
-      const from = (pageNum - 1) * limitNum;
-      const to = from + limitNum - 1;
-
+      const skip = (pageNum - 1) * limitNum;
+      
+      let products, total;
       if (manualOrder && !search) {
-        // Fetch all then sort manually
-        const { data: allProducts, count } = await query;
-        let products = allProducts || [];
-
+        // Fetch all matching products then sort and paginate manually or via $in
+        // But $in doesn't guarantee order. 
+        // Best for small/medium collections: fetch all matching IDs, then paginate.
+        const allMatching = await Product.find(query).select(fieldsToSelect);
+        total = allMatching.length;
+        
+        // Sort
         const orderMap = {};
         manualOrder.forEach((id, idx) => orderMap[id] = idx);
-        products.sort((a, b) => {
-          const idxA = orderMap[a.id] !== undefined ? orderMap[a.id] : 9999;
-          const idxB = orderMap[b.id] !== undefined ? orderMap[b.id] : 9999;
+        allMatching.sort((a, b) => {
+          const idxA = orderMap[a._id.toString()] !== undefined ? orderMap[a._id.toString()] : 9999;
+          const idxB = orderMap[b._id.toString()] !== undefined ? orderMap[b._id.toString()] : 9999;
           return idxA - idxB;
         });
-
-        const sliced = products.slice(from, from + limitNum);
-        const enriched = await enrichProducts(sliced);
-
-        const result = {
-          products: enriched,
-          total: count || products.length,
-          page: pageNum,
-          totalPages: Math.ceil((count || products.length) / limitNum)
-        };
-
-        if (admin !== 'true') {
-          productCache.set(cacheKey, { data: result, time: Date.now() });
-        }
-        return res.json(result);
+        
+        products = allMatching.slice(skip, skip + limitNum);
+      } else {
+        [products, total] = await Promise.all([
+          Product.find(query).select(fieldsToSelect).sort(sortObj).skip(skip).limit(limitNum),
+          Product.countDocuments(query)
+        ]);
       }
-
-      query = query.range(from, to);
-      const { data: products, count, error } = await query;
-      if (error) throw error;
-
-      const enriched = await enrichProducts(products || []);
-
+      
       const result = {
-        products: enriched,
-        total: count || 0,
+        products,
+        total,
         page: pageNum,
-        totalPages: Math.ceil((count || 0) / limitNum)
+        totalPages: Math.ceil(total / limitNum)
       };
 
       if (admin !== 'true') {
+        const cacheKey = JSON.stringify({ page, limit, admin, collectionId, search });
         productCache.set(cacheKey, { data: result, time: Date.now() });
       }
+      
       res.json(result);
     } else {
+      // For non-paginated requests (like the home page), still apply a reasonable limit of 500
+      // unless it's an admin request.
+      const queryExec = Product.find(query).select(fieldsToSelect).sort(sortObj);
       if (admin !== 'true') {
-        query = query.limit(500);
+        queryExec.limit(500); 
       }
-      const { data: products, error } = await query;
-      if (error) throw error;
-
-      const enriched = await enrichProducts(products || []);
-
+      const products = await queryExec;
       if (admin !== 'true') {
-        productCache.set(cacheKey, { data: enriched, time: Date.now() });
+        const cacheKey = JSON.stringify({ page, limit, admin, collectionId, search });
+        productCache.set(cacheKey, { data: products, time: Date.now() });
       }
-      res.json(enriched);
+      res.json(products);
     }
   } catch (err) {
-    console.error('Fetch products error:', err);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
@@ -334,11 +152,10 @@ router.get('/', async (req, res) => {
 // GET /api/products/:id — single product
 router.get('/:id', async (req, res) => {
   try {
-    const product = await getFullProduct(req.params.id);
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
   } catch (err) {
-    console.error('Fetch product error:', err);
     res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
@@ -346,14 +163,9 @@ router.get('/:id', async (req, res) => {
 // GET /api/products/handle/:handle — single product by handle
 router.get('/handle/:handle', async (req, res) => {
   try {
-    const { data: product, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('handle', req.params.handle)
-      .single();
-    if (error || !product) return res.status(404).json({ error: 'Product not found' });
-    const enriched = await enrichProduct(product);
-    res.json(enriched);
+    const product = await Product.findOne({ handle: req.params.handle });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch product by handle' });
   }
@@ -401,38 +213,19 @@ router.post('/', adminAuth, async (req, res) => {
     // Process images if they are from Google Drive
     await processDriveImages(body);
 
-    // Get count for sort order
-    const { count } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
-
-    const { data: product, error } = await supabase
-      .from('products')
-      .insert({
-        name: body.name,
-        handle: body.handle || '',
-        base_price: body.basePrice,
-        sale_price: body.salePrice ?? null,
-        image_url: body.imageUrl || '',
-        description: body.description || '',
-        sort_order: count || 0,
-        active: body.active !== false,
-        status: body.status || 'active',
-        quantity: body.quantity ?? null
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Save relations (images, collections, options, variants)
-    await saveProductRelations(product.id, body);
-
-    const full = await getFullProduct(product.id);
+    const count = await Product.countDocuments();
+    const product = new Product({ 
+      ...body,
+      sortOrder: count
+    });
+    
+    await product.save();
     clearCache();
-    res.status(201).json(full);
+    res.status(201).json(product);
   } catch (err) {
-    console.error('Create product error:', err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Failed to create product' });
   }
 });
@@ -441,40 +234,23 @@ router.post('/', adminAuth, async (req, res) => {
 router.put('/:id', adminAuth, async (req, res) => {
   try {
     const body = req.body;
-
+    
     // Process images if they are from Google Drive
     await processDriveImages(body);
 
-    const updateData = {};
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.handle !== undefined) updateData.handle = body.handle;
-    if (body.basePrice !== undefined) updateData.base_price = body.basePrice;
-    if (body.salePrice !== undefined) updateData.sale_price = body.salePrice;
-    if (body.imageUrl !== undefined) updateData.image_url = body.imageUrl;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.sortOrder !== undefined) updateData.sort_order = body.sortOrder;
-    if (body.active !== undefined) updateData.active = body.active;
-    if (body.status !== undefined) updateData.status = body.status;
-    if (body.quantity !== undefined) updateData.quantity = body.quantity;
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      body,
+      { new: true, runValidators: true }
+    );
 
-    if (Object.keys(updateData).length > 0) {
-      const { error } = await supabase
-        .from('products')
-        .update(updateData)
-        .eq('id', req.params.id);
-      if (error) throw error;
-    }
-
-    // Update relations
-    await saveProductRelations(req.params.id, body);
-
-    const product = await getFullProduct(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
-
     clearCache();
     res.json(product);
   } catch (err) {
-    console.error('Update product error:', err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Failed to update product' });
   }
 });
@@ -482,11 +258,8 @@ router.put('/:id', adminAuth, async (req, res) => {
 // DELETE /api/products/:id — delete
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', req.params.id);
-    if (error) throw error;
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
     clearCache();
     res.json({ message: 'Product deleted' });
   } catch (err) {
@@ -499,7 +272,7 @@ router.post('/delete/batch', adminAuth, async (req, res) => {
   try {
     const { productIds } = req.body;
     if (!Array.isArray(productIds)) return res.status(400).json({ error: 'productIds must be an array' });
-    await supabase.from('products').delete().in('id', productIds);
+    await Product.deleteMany({ _id: { $in: productIds } });
     clearCache();
     res.json({ message: 'Products deleted successfully' });
   } catch (err) {
@@ -512,10 +285,10 @@ router.post('/deactivate/batch', adminAuth, async (req, res) => {
   try {
     const { productIds } = req.body;
     if (!Array.isArray(productIds)) return res.status(400).json({ error: 'productIds must be an array' });
-    await supabase
-      .from('products')
-      .update({ active: false, status: 'draft' })
-      .in('id', productIds);
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $set: { active: false, status: 'draft' } }
+    );
     clearCache();
     res.json({ message: 'Products deactivated successfully' });
   } catch (err) {
@@ -530,12 +303,13 @@ router.put('/reorder/batch', adminAuth, async (req, res) => {
     if (!order || !Array.isArray(order)) {
       return res.status(400).json({ error: 'order array is required' });
     }
-    for (const item of order) {
-      await supabase
-        .from('products')
-        .update({ sort_order: item.sortOrder })
-        .eq('id', item.id);
-    }
+    const ops = order.map(item => ({
+      updateOne: {
+        filter: { _id: item.id },
+        update: { $set: { sortOrder: item.sortOrder } }
+      }
+    }));
+    await Product.bulkWrite(ops);
     clearCache();
     res.json({ message: 'Products reordered' });
   } catch (err) {
@@ -548,44 +322,37 @@ router.put('/collection/batch', adminAuth, async (req, res) => {
   try {
     const { productIds, collectionId, action } = req.body;
     if (!Array.isArray(productIds)) return res.status(400).json({ error: 'productIds must be an array' });
-
+    
     if (action === 'add') {
-      const rows = productIds.map(pid => ({
-        product_id: pid,
-        collection_id: collectionId
-      }));
-      // Use upsert to avoid duplicates
-      await supabase.from('product_collections').upsert(rows, {
-        onConflict: 'product_id,collection_id'
-      });
+      await Product.updateMany(
+        { _id: { $in: productIds } },
+        { $addToSet: { collectionIds: collectionId } }
+      );
     } else if (action === 'remove') {
-      await supabase
-        .from('product_collections')
-        .delete()
-        .eq('collection_id', collectionId)
-        .in('product_id', productIds);
+      await Product.updateMany(
+        { _id: { $in: productIds } },
+        { $pull: { collectionIds: collectionId } }
+      );
     } else if (action === 'set') {
-      // Remove collection from all products
-      await supabase
-        .from('product_collections')
-        .delete()
-        .eq('collection_id', collectionId);
-      // Add to specified products
-      if (productIds.length > 0) {
-        const rows = productIds.map(pid => ({
-          product_id: pid,
-          collection_id: collectionId
-        }));
-        await supabase.from('product_collections').insert(rows);
-      }
+       // First remove this collection from all products that have it
+       await Product.updateMany(
+        { collectionIds: collectionId },
+        { $pull: { collectionIds: collectionId } }
+       );
+       // Then add it only to the specified products
+       if (productIds.length > 0) {
+         await Product.updateMany(
+           { _id: { $in: productIds } },
+           { $addToSet: { collectionIds: collectionId } }
+         );
+       }
     } else {
       return res.status(400).json({ error: 'invalid action' });
     }
-
+    
     clearCache();
     res.json({ message: 'Product collections updated successfully' });
   } catch (err) {
-    console.error('Batch collection update error:', err);
     res.status(500).json({ error: 'Failed to update product collections' });
   }
 });
@@ -603,7 +370,7 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
     };
 
     if (deleteAll === 'true') {
-      await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await Product.deleteMany({});
       clearCache();
     }
 
@@ -617,10 +384,11 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
     };
 
     // Get all collections to map names
-    const { data: collections } = await supabase.from('collections').select('*');
+    const Collection = require('../models/Collection');
+    let collections = await Collection.find({});
     const collectionMap = {};
-    (collections || []).forEach(c => {
-      collectionMap[normalizeArabic(c.name)] = c.id;
+    collections.forEach(c => {
+      collectionMap[normalizeArabic(c.name)] = c._id;
     });
 
     const productsMap = new Map();
@@ -632,7 +400,7 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
 
     for await (const row of stream) {
       const title = row['title'] ? row['title'].trim() : '';
-
+      
       if (title) {
         const product = {
           name: title,
@@ -663,19 +431,15 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
             if (collectionMap[normName]) {
               product.collectionIds.push(collectionMap[normName]);
             } else if (createCollections === 'true') {
+              // Create collection if missing
               try {
-                const { data: newCol } = await supabase
-                  .from('collections')
-                  .insert({
-                    name,
-                    url_name: name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]/g, '') || Date.now().toString()
-                  })
-                  .select()
-                  .single();
-                if (newCol) {
-                  collectionMap[normName] = newCol.id;
-                  product.collectionIds.push(newCol.id);
-                }
+                const newCol = new Collection({ 
+                  name, 
+                  handle: name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]/g, '') || Date.now().toString()
+                });
+                await newCol.save();
+                collectionMap[normName] = newCol._id;
+                product.collectionIds.push(newCol._id);
               } catch (e) {
                 console.error('Failed to auto-create collection:', name, e.message);
               }
@@ -687,7 +451,7 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
         lastProduct = product;
       }
 
-      // Handle Options
+      // Handle Options (Option1, Option2, Option3)
       if (lastProduct) {
         for (let i = 1; i <= 3; i++) {
           const optName = row[`option${i} name`] ? row[`option${i} name`].trim() : '';
@@ -700,11 +464,14 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
               lastProduct.options.push(group);
             }
 
+            // Option pricing: use row prices if available, otherwise fallback to product prices
             const rowReg = row['regular price'];
             const rowSale = row['sale price'];
+            
             const price = rowReg ? cleanPrice(rowReg) : lastProduct.basePrice;
             const sPrice = rowSale ? cleanPrice(rowSale) : lastProduct.salePrice;
 
+            // Avoid duplicates in the same group
             if (!group.values.find(v => v.label === optValue)) {
               group.values.push({
                 label: optValue,
@@ -717,52 +484,25 @@ router.post('/import', adminAuth, upload.single('file'), async (req, res) => {
       }
     }
 
-    // Now upsert products
+    // Now Upsert products
     const finalProducts = Array.from(productsMap.values());
     let index = 0;
     for (const pData of finalProducts) {
-      // Check existing
-      const { data: existing } = await supabase
-        .from('products')
-        .select('id')
-        .eq('name', pData.name)
-        .maybeSingle();
-
-      if (existing) {
-        // Update
-        await supabase.from('products').update({
-          description: pData.description,
-          base_price: pData.basePrice,
-          sale_price: pData.salePrice,
-          image_url: pData.imageUrl,
-          status: pData.status,
-          quantity: pData.quantity
-        }).eq('id', existing.id);
-
-        await saveProductRelations(existing.id, pData);
+      // Find current count if creating new
+      if (deleteAll !== 'true') {
+         const existing = await Product.findOne({ name: pData.name });
+         if (!existing) {
+           pData.sortOrder = await Product.countDocuments();
+         }
       } else {
-        const sortOrder = deleteAll === 'true' ? index++ : (await supabase.from('products').select('*', { count: 'exact', head: true })).count || 0;
-
-        const { data: newProd } = await supabase
-          .from('products')
-          .insert({
-            name: pData.name,
-            description: pData.description,
-            base_price: pData.basePrice,
-            sale_price: pData.salePrice,
-            image_url: pData.imageUrl,
-            active: pData.status === 'active',
-            status: pData.status,
-            quantity: pData.quantity,
-            sort_order: sortOrder
-          })
-          .select()
-          .single();
-
-        if (newProd) {
-          await saveProductRelations(newProd.id, pData);
-        }
+        pData.sortOrder = index++;
       }
+      
+      await Product.findOneAndUpdate(
+        { name: pData.name },
+        pData,
+        { upsert: true, new: true, runValidators: true }
+      );
     }
 
     // Cleanup file

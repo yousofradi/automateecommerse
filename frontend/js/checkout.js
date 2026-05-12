@@ -13,7 +13,7 @@ async function loadPaymentMethods() {
   const container = document.getElementById('payment-methods-checkout');
   if (!container) return;
   try {
-    const settings = await api.getSetting('autoecommerce_global_settings');
+    const settings = await api.getSetting('sundura_global_settings');
     const methods = settings ? (settings.paymentMethods || []) : [];
     
     if (methods.length === 0) {

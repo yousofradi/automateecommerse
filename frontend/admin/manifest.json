@@ -1,6 +1,6 @@
 {
-  "id": "autoecommerce-admin-v1",
-  "name": "AutoEcommerce Admin",
+  "id": "sundura-admin-v1",
+  "name": "Sundura Admin",
   "short_name": "Admin",
   "description": "Store Management Dashboard",
   "start_url": "index.html",

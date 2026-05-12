@@ -94,4 +94,3 @@ On order cancellation: `POST WEBHOOK_URL` with `{ event: "order.cancelled", data
 | `ADMIN_API_KEY` | Yes | Secret key for admin API access |
 | `PORT` | No | Server port (default: 5000) |
 "# ecommerce" 
-"# automateecommerse" 

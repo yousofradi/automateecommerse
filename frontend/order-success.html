@@ -104,7 +104,7 @@
   <script src="js/cart.js"></script>
   <script>
     async function copyNumber() {
-      const settings = await api.getSetting('autoecommerce_global_settings');
+      const settings = await api.getSetting('sundura_global_settings');
       const num = settings ? settings.socialWa : '';
       navigator.clipboard.writeText(num).then(() => {
         const modal = document.createElement('div');
@@ -178,7 +178,7 @@
         document.getElementById('summ-shipping').textContent = formatPrice(order.shippingFee);
         document.getElementById('summ-total').textContent = formatPrice(order.totalPrice);
 
-        const settings = await api.getSetting('autoecommerce_global_settings');
+        const settings = await api.getSetting('sundura_global_settings');
         let waNumber = (settings.socialWa || '').replace(/[^0-9]/g, '');
         if (waNumber.startsWith('01')) waNumber = '2' + waNumber;
         const brandName = settings.invoicePrefix || 'المتجر';

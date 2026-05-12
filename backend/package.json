@@ -1,26 +1,24 @@
 {
   "name": "ecommerce-backend",
-  "version": "2.0.0",
-  "description": "eCommerce backend API — Express + Supabase (PostgreSQL)",
-  "main": "server.js",
+  "version": "1.0.0",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma": "prisma"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.0",
-    "cloudinary": "^1.41.0",
-    "compression": "^1.8.1",
+    "@prisma/client": "^5.0.0",
     "cors": "^2.8.5",
-    "csv-parser": "^3.2.0",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "multer": "^2.1.1",
-    "multer-storage-cloudinary": "^4.0.0",
-    "uuid": "^11.1.0",
-    "web-push": "^3.6.7"
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "multer": "^1.4.5-lts.1"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "devDependencies": {
+    "prisma": "^5.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.2.0"
   }
 }

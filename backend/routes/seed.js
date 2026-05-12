@@ -1,64 +1,67 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+const Product = require('../models/Product');
+const Collection = require('../models/Collection');
 const adminAuth = require('../middleware/adminAuth');
 
 // POST /api/seed/collections — replaces existing collections with predefined list
 router.post('/collections', adminAuth, async (req, res) => {
   try {
     const collectionsData = [
-      { name: 'سكوب سندورة', image_url: 'https://assets.wuiltstore.com/cmo0fglem05nc01lzdnl9fvh8_scope.webp' },
-      { name: 'ألعاب', image_url: 'https://assets.wuiltstore.com/cmo0gt4x805sk01n0exmd9zpl_Games.webp' },
-      { name: 'أدوات فنية / تلوين', image_url: 'https://assets.wuiltstore.com/cmo0ghhw505rb01lw53u64q3m_Paint.webp' },
-      { name: 'استيكرات', image_url: 'https://assets.wuiltstore.com/cmo0gm31705l401l7gsye6xl0_stickers.webp' },
-      { name: 'ديكورالمكتب', image_url: 'https://assets.wuiltstore.com/cmo04f8v105qn01l8fi0tg23k_WhatsApp_Image_2026-04-15_at_3.59.46_PM.webp' },
-      { name: 'المنظمات', image_url: 'https://assets.wuiltstore.com/cmo0f1b6005k401l7fifjhre2_organize.webp' },
-      { name: 'شنط / توك / اكسسورات', image_url: 'https://assets.wuiltstore.com/cmo0ezw3z05n301lzcnujdmqp_bags.webp' },
-      { name: 'لانش بوكس/مجات/زجاجات', image_url: 'https://assets.wuiltstore.com/cmo0gw54j05nx01lzbeay9u9s_Cups.webp' },
-      { name: 'دفاتر / كشاكيل', image_url: 'https://assets.wuiltstore.com/cmo0gqr7g05rf01lw67ng3o0i_paper.webp' },
-      { name: 'نوت بوك', image_url: 'https://assets.wuiltstore.com/cmo0erg2z05mz01lz872kai3p_note.webp' },
-      { name: 'استيكي نوت', image_url: 'https://assets.wuiltstore.com/cmo0g29og05sc01n09wxm7lm7_stickynotes.webp' },
-      { name: 'اقلام متعددة الالوان', image_url: 'https://assets.wuiltstore.com/cmo0g4sk405r401lw6l6k74ug_multicolor.webp' },
-      { name: 'اقلام جاف / حبر', image_url: 'https://assets.wuiltstore.com/cmo0ducgq05mk01lz5hcx85zn_WhatsApp_Image_2026-04-15_at_8.26.26_PM.webp' },
-      { name: 'اقلام رصاص / سنون', image_url: 'https://assets.wuiltstore.com/cmo0gdy5405r901lw46gq56o6_pencils.webp' },
-      { name: 'اقلام هايلايتر', image_url: 'https://assets.wuiltstore.com/cmo0ga3u405r801lw8kwmhpz0_hightlighter.webp' },
-      { name: 'كوريكتور', image_url: 'https://assets.wuiltstore.com/cmo0fxcpd05nj01lzer8ncltm_corrector.webp' },
-      { name: 'ادوات التخطيط والتلخيص', image_url: 'https://assets.wuiltstore.com/cmo0fe5rz05rs01n088zzaw9p_plaining.webp' },
-      { name: 'مقالم مستوردة', image_url: 'https://assets.wuiltstore.com/cmo0famk605kc01l7gaiv17yk_case.webp' },
-      { name: 'الادوات الهندسيه', image_url: 'https://assets.wuiltstore.com/cmo0fz3tj05sa01n0du419tyw_engineeringTools.webp' },
-      { name: 'برايات', image_url: 'https://assets.wuiltstore.com/cmo0f4fhy05n901lzdk9y3y1n_br.webp' },
-      { name: 'أستيكه (جوما)', image_url: 'https://assets.wuiltstore.com/cmo0f7oqe05qm01lwbsay4oje_earser.webp' }
+      { name: 'سكوب سندورة', imageUrl: 'https://assets.wuiltstore.com/cmo0fglem05nc01lzdnl9fvh8_scope.webp' },
+      { name: 'ألعاب', imageUrl: 'https://assets.wuiltstore.com/cmo0gt4x805sk01n0exmd9zpl_Games.webp' },
+      { name: 'أدوات فنية / تلوين', imageUrl: 'https://assets.wuiltstore.com/cmo0ghhw505rb01lw53u64q3m_Paint.webp' },
+      { name: 'استيكرات', imageUrl: 'https://assets.wuiltstore.com/cmo0gm31705l401l7gsye6xl0_stickers.webp' },
+      { name: 'ديكورالمكتب', imageUrl: 'https://assets.wuiltstore.com/cmo04f8v105qn01l8fi0tg23k_WhatsApp_Image_2026-04-15_at_3.59.46_PM.webp' },
+      { name: 'المنظمات', imageUrl: 'https://assets.wuiltstore.com/cmo0f1b6005k401l7fifjhre2_organize.webp' },
+      { name: 'شنط / توك / اكسسورات', imageUrl: 'https://assets.wuiltstore.com/cmo0ezw3z05n301lzcnujdmqp_bags.webp' },
+      { name: 'لانش بوكس/مجات/زجاجات', imageUrl: 'https://assets.wuiltstore.com/cmo0gw54j05nx01lzbeay9u9s_Cups.webp' },
+      { name: 'دفاتر / كشاكيل', imageUrl: 'https://assets.wuiltstore.com/cmo0gqr7g05rf01lw67ng3o0i_paper.webp' },
+      { name: 'نوت بوك', imageUrl: 'https://assets.wuiltstore.com/cmo0erg2z05mz01lz872kai3p_note.webp' },
+      { name: 'استيكي نوت', imageUrl: 'https://assets.wuiltstore.com/cmo0g29og05sc01n09wxm7lm7_stickynotes.webp' },
+      { name: 'اقلام متعددة الالوان', imageUrl: 'https://assets.wuiltstore.com/cmo0g4sk405r401lw6l6k74ug_multicolor.webp' },
+      { name: 'اقلام جاف / حبر', imageUrl: 'https://assets.wuiltstore.com/cmo0ducgq05mk01lz5hcx85zn_WhatsApp_Image_2026-04-15_at_8.26.26_PM.webp' },
+      { name: 'اقلام رصاص / سنون', imageUrl: 'https://assets.wuiltstore.com/cmo0gdy5405r901lw46gq56o6_pencils.webp' },
+      { name: 'اقلام هايلايتر', imageUrl: 'https://assets.wuiltstore.com/cmo0ga3u405r801lw8kwmhpz0_hightlighter.webp' },
+      { name: 'كوريكتور', imageUrl: 'https://assets.wuiltstore.com/cmo0fxcpd05nj01lzer8ncltm_corrector.webp' },
+      { name: 'ادوات التخطيط والتلخيص', imageUrl: 'https://assets.wuiltstore.com/cmo0fe5rz05rs01n088zzaw9p_plaining.webp' },
+      { name: 'مقالم مستوردة', imageUrl: 'https://assets.wuiltstore.com/cmo0famk605kc01l7gaiv17yk_case.webp' },
+      { name: 'الادوات الهندسيه', imageUrl: 'https://assets.wuiltstore.com/cmo0fz3tj05sa01n0du419tyw_engineeringTools.webp' },
+      { name: 'برايات', imageUrl: 'https://assets.wuiltstore.com/cmo0f4fhy05n901lzdk9y3y1n_br.webp' },
+      { name: 'أستيكه (جوما)', imageUrl: 'https://assets.wuiltstore.com/cmo0f7oqe05qm01lwbsay4oje_earser.webp' }
     ];
 
-    // Clear existing
-    await supabase.from('product_collections').delete().neq('product_id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('collection_product_order').delete().neq('collection_id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('collections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await Collection.deleteMany({});
+    await Product.updateMany({}, { collectionId: null, collectionIds: [] });
 
     for (const c of collectionsData) {
-      c.url_name = c.name.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, '-').replace(/(^-|-$)+/g, '');
-      await supabase.from('collections').insert(c);
+      c.handle = c.name.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, '-').replace(/(^-|-$)+/g, '');
+      await Collection.create(c);
     }
 
     res.json({ message: 'Collections replaced successfully' });
-  } catch (err) { res.status(500).json({ error: 'Seed failed: ' + err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Seed failed: ' + err.message });
+  }
 });
 
-// POST /api/seed — import products from CSV text
+// POST /api/seed — import products from CSV (run on server)
 router.post('/', adminAuth, async (req, res) => {
   try {
     const { clean, csvData } = req.body;
-    if (!csvData) return res.status(400).json({ error: 'csvData is required' });
 
-    if (clean) {
-      await supabase.from('product_images').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('product_options').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('product_variants').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('product_collections').delete().neq('product_id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('collections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (!csvData) {
+      return res.status(400).json({ error: 'csvData is required (CSV text content)' });
     }
 
+    if (clean) {
+      await Product.deleteMany({});
+      await Collection.deleteMany({});
+    }
+
+    // Parse CSV
     const rows = parseCSV(csvData);
     const headers = rows[0];
     const dataRows = rows.slice(1);
@@ -84,15 +87,15 @@ router.post('/', adminAuth, async (req, res) => {
     }
 
     const collectionMap = {};
+    let colOrder = 0;
     for (const name of collectionNames) {
-      const { data: existing } = await supabase.from('collections').select('id').eq('name', name).maybeSingle();
-      if (existing) { collectionMap[name] = existing.id; }
-      else {
-        const { data: newCol } = await supabase.from('collections').insert({ name }).select().single();
-        if (newCol) collectionMap[name] = newCol.id;
-      }
+      let existing = await Collection.findOne({ name });
+      if (!existing) existing = await Collection.create({ name, sortOrder: colOrder });
+      collectionMap[name] = existing._id;
+      colOrder++;
     }
 
+    // Create products
     let created = 0;
     let sortOrder = 0;
     for (const handle of groupOrder) {
@@ -108,6 +111,7 @@ router.post('/', adminAuth, async (req, res) => {
       const images = imagesStr ? imagesStr.split(/\s+/).filter(u => u.startsWith('http')) : [];
       const regularPrice = parseFloat(mainRow[idx['Regular Price']] || '0') || 0;
       const salePrice = parseFloat(mainRow[idx['Sale Price']] || '') || null;
+      const basePrice = regularPrice;
 
       const qtyRaw = (mainRow[idx['Quantity']] || '').trim();
       let quantity = null;
@@ -119,6 +123,7 @@ router.post('/', adminAuth, async (req, res) => {
       const colStr = (mainRow[idx['Collections']] || '').trim();
       const colNames = colStr ? colStr.split(',').map(c => c.trim()).filter(Boolean) : [];
       const colIds = colNames.map(n => collectionMap[n]).filter(Boolean);
+      const collectionId = colIds.length > 0 ? colIds[0] : null;
 
       // Build options
       const options = [];
@@ -132,56 +137,67 @@ router.post('/', adminAuth, async (req, res) => {
           const vr = parseFloat(row[idx['Regular Price']] || '') || regularPrice;
           const vs = parseFloat(row[idx['Sale Price']] || '') || null;
           const vp = vs || vr;
-          const diff = vp - (salePrice || regularPrice);
+          const diff = vp - (salePrice || basePrice);
           if (!valuesMap.has(val)) valuesMap.set(val, { label: val, price: diff > 0 ? Math.round(diff) : 0 });
         }
         if (valuesMap.size > 0) options.push({ name: optName, required: false, values: Array.from(valuesMap.values()) });
       }
 
-      try {
-        const { data: newProd } = await supabase.from('products').insert({
-          name, handle, base_price: regularPrice, sale_price: salePrice,
-          image_url: images[0] || '', description,
-          sort_order: sortOrder, active: status === 'active', status, quantity
-        }).select().single();
-
-        if (newProd) {
-          // Save images
-          if (images.length > 0) {
-            await supabase.from('product_images').insert(images.map((url, i) => ({ product_id: newProd.id, url, position: i })));
+      // Variant quantities
+      if (rows.length > 1 && quantity === null) {
+        let totalQty = 0, hasNumeric = false;
+        for (const row of rows) {
+          const vq = (row[idx['Quantity']] || '').trim();
+          if (vq && vq !== 'Available') {
+            const parsed = parseInt(vq);
+            if (!isNaN(parsed)) { totalQty += parsed; hasNumeric = true; }
           }
-          // Save collections
-          if (colIds.length > 0) {
-            await supabase.from('product_collections').insert(colIds.map(cid => ({ product_id: newProd.id, collection_id: cid })));
-          }
-          // Save options
-          for (let i = 0; i < options.length; i++) {
-            const opt = options[i];
-            const { data: optRow } = await supabase.from('product_options').insert({ product_id: newProd.id, name: opt.name, position: i }).select().single();
-            if (optRow && opt.values.length > 0) {
-              await supabase.from('option_values').insert(opt.values.map((v, j) => ({ option_id: optRow.id, label: v.label, price: v.price, position: j })));
-            }
-          }
-          created++;
         }
+        if (hasNumeric) quantity = totalQty;
+      }
+
+      try {
+        await Product.create({
+          name, handle, basePrice, salePrice,
+          imageUrl: images[0] || '', images, description,
+          collectionId, collectionIds: colIds, options,
+          sortOrder, active: status === 'active', status, quantity
+        });
+        created++;
         sortOrder++;
       } catch (err) { /* skip invalid */ }
     }
 
+    // Update collection images
+    for (const [, colId] of Object.entries(collectionMap)) {
+      const fp = await Product.findOne({
+        $or: [{ collectionId: colId }, { collectionIds: colId }],
+        images: { $exists: true, $ne: [] }
+      }).sort({ sortOrder: 1 });
+      if (fp && fp.images.length > 0) await Collection.findByIdAndUpdate(colId, { imageUrl: fp.images[0] });
+    }
+
     res.json({ message: `Seed complete: ${created} products, ${Object.keys(collectionMap).length} collections` });
-  } catch (err) { res.status(500).json({ error: 'Seed failed: ' + err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Seed failed: ' + err.message });
+  }
 });
 
-// CSV parser (same as original)
+// CSV parser
 function parseCSV(text) {
-  const rows = []; let i = 0; const len = text.length;
+  const rows = [];
+  let i = 0;
+  const len = text.length;
   function readField() {
     if (i >= len || text[i] === '\n' || text[i] === '\r') return '';
     if (text[i] === '"') {
-      i++; let val = '';
+      i++;
+      let val = '';
       while (i < len) {
-        if (text[i] === '"') { if (i + 1 < len && text[i + 1] === '"') { val += '"'; i += 2; } else { i++; break; } }
-        else { val += text[i]; i++; }
+        if (text[i] === '"') {
+          if (i + 1 < len && text[i + 1] === '"') { val += '"'; i += 2; }
+          else { i++; break; }
+        } else { val += text[i]; i++; }
       }
       return val;
     } else {
@@ -192,7 +208,11 @@ function parseCSV(text) {
   }
   while (i < len) {
     const row = [];
-    while (true) { row.push(readField()); if (i < len && text[i] === ',') { i++; continue; } break; }
+    while (true) {
+      row.push(readField());
+      if (i < len && text[i] === ',') { i++; continue; }
+      break;
+    }
     if (i < len && text[i] === '\r') i++;
     if (i < len && text[i] === '\n') i++;
     if (row.length > 1 || row[0] !== '') rows.push(row);
