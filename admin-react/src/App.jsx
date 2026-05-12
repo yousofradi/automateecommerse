@@ -13,6 +13,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/index.html" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<Dashboard />} />
         <Route path="/admin/products" element={<Products />} />
