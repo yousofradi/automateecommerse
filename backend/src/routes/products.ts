@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { adminAuth } from '../middleware/adminAuth';
 
 const router = Router();
 
 // GET /api/products
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const { collectionId, search, page = '1', limit = '20' } = req.query;
@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/products/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const id = parseInt(req.params.id as string);
@@ -88,7 +88,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/products — create (Admin)
-router.post('/', adminAuth, async (req, res) => {
+router.post('/', adminAuth, async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const { name, slug, basePrice, salePrice, imageUrl, images, status, categories, options } = req.body;
@@ -137,7 +137,7 @@ router.post('/', adminAuth, async (req, res) => {
 });
 
 // PUT /api/products/:id — update (Admin)
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', adminAuth, async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const id = parseInt(req.params.id as string);
@@ -165,7 +165,7 @@ router.put('/:id', adminAuth, async (req, res) => {
 });
 
 // DELETE /api/products/:id — delete (Admin)
-router.delete('/:id', adminAuth, async (req, res) => {
+router.delete('/:id', adminAuth, async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const id = parseInt(req.params.id as string);

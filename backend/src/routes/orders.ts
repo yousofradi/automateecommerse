@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 
 // POST /api/orders - create order
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const { items, totalPrice, shippingFee, paymentMethod, discount } = req.body;
@@ -41,10 +41,10 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/orders/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid order ID' });
 
     const order = await prisma.order.findUnique({

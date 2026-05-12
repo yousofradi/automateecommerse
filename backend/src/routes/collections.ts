@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 
 // GET /api/collections
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
     const collections = await prisma.category.findMany({
@@ -18,10 +18,10 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/collections/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const prisma = (req as any).prisma as PrismaClient;
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid collection ID' });
 
     const collection = await prisma.category.findUnique({

@@ -34,12 +34,12 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 
 // ── Health check ───────────────────────────────────
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // ── 404 handler ───────────────────────────────────
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
