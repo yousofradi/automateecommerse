@@ -34,7 +34,7 @@
   else apply();
 })();
 
-const API_BASE = 'API_URL_PLACEHOLDER';
+const API_BASE = '__API_BASE__';
 
 
 const api = {

@@ -16,8 +16,9 @@ services:
   - type: static
     name: ecommerce-frontend
     rootDirectory: frontend
-    staticPublishPath: ./dist
+    staticPublishPath: .
+    buildCommand: "sed -i 's|__API_BASE__|'${REACT_APP_API_URL}'|g' js/api.js admin/js/api.js"
     envVars:
       - key: REACT_APP_API_URL
-        value: https://ecommerce-api.onrender.com
+        value: https://ecommerce-api.onrender.com/api
     region: oregon
